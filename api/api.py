@@ -68,6 +68,7 @@ class ClubResource(Resource):
     def patch(club_id):
         data = club_patch_parser.parse_args()
         Club.query.filter_by(id=club_id).update(data)
+        db.session.commit()
         return Club.query.filter_by(id=club_id).first_or_404()
     
     @staticmethod
@@ -132,7 +133,8 @@ class ClubMemberResource(Resource):
     @ns_api.marshal_with(member_fields)
     def patch(club_id, member_id):
         data = member_patch_parser.parse_args()
-        print(ClubMember.query.filter_by(id=member_id, club_id=club_id).update(data))
+        ClubMember.query.filter_by(id=member_id, club_id=club_id).update(data)
+        db.session.commit()
         return ClubMember.query.filter_by(id=member_id, club_id=club_id).first_or_404()
 
     @staticmethod
@@ -155,6 +157,7 @@ class UserResource(Resource):
     def patch(user_id):
         data = user_patch_parser.parse_args()
         User.query.filter_by(id=user_id).update(data)
+        db.session.commit()
         return User.query.filter_by(id=user_id).first_or_404()
 
     @staticmethod
