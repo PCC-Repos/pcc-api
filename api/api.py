@@ -55,6 +55,7 @@ user_patch_parser.add_argument("money", type=str, location="json")
 member_patch_parser = RequestParser()
 member_patch_parser.add_argument("nick", type=str, location="json")
 
+
 @ns_api.route("/clubs/<int:club_id>", endpoint="club")  # noqa
 class ClubResource(Resource):
     @staticmethod
@@ -70,7 +71,7 @@ class ClubResource(Resource):
         Club.query.filter_by(id=club_id).update(data)
         db.session.commit()
         return Club.query.filter_by(id=club_id).first_or_404()
-    
+
     @staticmethod
     def delete(club_id):
         club = Club.query.filter_by(id=club_id).first_or_404()
@@ -144,6 +145,7 @@ class ClubMemberResource(Resource):
         db.session.commit()
         return {"message": "Success"}, 200
 
+
 @ns_api.route("/users/<int:user_id>", endpoint="user")  # noqa
 class UserResource(Resource):
     @staticmethod
@@ -186,3 +188,14 @@ class UsersResource(Resource):
     @ns_api.marshal_list_with(user_fields)
     def get():
         return User.query.all()
+
+
+@ns_api.route("/transfer/", endpoint="transfers")
+class Transfers(Resource):
+    @staticmethod
+    def get():
+        pass
+
+    @staticmethod
+    def post():
+        pass

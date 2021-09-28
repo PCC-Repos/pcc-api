@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, PrimaryKeyConstraint
 from sqlalchemy.dialects.postgresql import BIGINT
 
 from db import BaseModel, db
@@ -52,16 +52,6 @@ class ClubMember(BaseModel):
     club_id = db.Column(BIGINT, ForeignKey("clubs.id"), primary_key=True)
     joined_at = db.Column(db.DateTime, default=datetime.datetime.now)
 
-    # __table_args__ = (ForeignKeyConstraint((id, club_id), [User.id, Club.id]),)
-
     def __init__(self, _id, club_id):
         self.id = _id
         self.club_id = club_id
-
-    # def __init__(self, _id, name, club, joined_at): ...
-
-    # def create(self, name, ): ...
-
-    # def __init__(self): ...
-
-    # def create(self): ...
