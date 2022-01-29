@@ -202,7 +202,7 @@ class ClubMemberResource(Resource):
         return ClubMember.query.filter_by(id=member_id, club_id=club_id).first_or_404()
 
     @staticmethod
-    def delete(club_id, member_id, envelope="member"):
+    def delete(club_id, member_id):
         member = ClubMember.query.filter_by(id=member_id, club_id=club_id).first_or_404()
         db.session.delete(member)
         db.session.commit()
@@ -226,7 +226,7 @@ class UserResource(Resource):
         return User.query.filter_by(id=user_id).first_or_404()
 
     @staticmethod
-    def delete(user_id, envelope="user"):
+    def delete(user_id):
         user = User.query.filter_by(id=user_id).first_or_404()
         db.session.delete(user)
         db.session.commit()
