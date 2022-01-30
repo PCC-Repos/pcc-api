@@ -119,6 +119,8 @@ transaction_create_parser = RequestParser()
 transaction_create_parser.add_argument("item_id", type=int, location="json")
 transaction_create_parser.add_argument("seller_id", type=int, location="json")
 transaction_create_parser.add_argument("buyer_id", type=int, location="json")
+
+
 # transaction_create_parser.add_argument("cost", type=int, location="json")
 
 
@@ -231,6 +233,16 @@ class UserResource(Resource):
         db.session.delete(user)
         db.session.commit()
         return {"message": "Success"}, 200
+
+
+@ns_api.route("/users/<int:user_id>/clubs", endpoint="user_clubs")  # noqa
+class ClubMembersResource(Resource):
+    @staticmethod
+    @ns_api.marshal_list_with(partial_club_fields, envelope="clubs")
+    def get(user_id):
+        clubs = User.query.filter_by(id=user_id).first_or_404()._clubs
+        clubs = [club.club for club in clubs]
+        return clubs
 
 
 @ns_api.route("/users/", endpoint="users")
