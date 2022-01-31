@@ -40,7 +40,7 @@ class Club(BaseModel):
 class User(BaseModel):
     __tablename__ = "users"
     id = db.Column(BIGINT, nullable=False, primary_key=True, default=id_generator.create_id)
-    discord_id = db.Column(BIGINT, nullable=False, unique=True)
+    discord_id = db.Column(BIGINT, nullable=False)
     money = db.Column(BIGINT, default=100000)
     created_at = db.Column(db.DateTime, default=datetime.datetime.now)
     guild_id = db.Column(BIGINT)

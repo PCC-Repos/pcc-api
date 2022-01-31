@@ -83,6 +83,9 @@ clubs_request_parser.add_argument("name", type=str, store_missing=False, locatio
 clubs_request_parser.add_argument("description", type=str, store_missing=False, location="json")
 clubs_request_parser.add_argument("guild_id", type=int, store_missing=False, location="json", required=False)
 
+club_join_parser = RequestParser()
+club_join_parser.add_argument("id", type=str, store_missing=False, location="json")
+
 user_request_parser = RequestParser()
 user_request_parser.add_argument("id", type=int, store_missing=False, location="json")
 
@@ -124,7 +127,7 @@ transaction_create_parser.add_argument("buyer_id", type=int, location="json")
 # transaction_create_parser.add_argument("cost", type=int, location="json")
 
 
-@ns_api.route("/clubs/<int:club_id>", endpoint="club")  # noqa
+@ns_api.route("/clubs/<int:club_id>/", endpoint="club")
 class ClubResource(Resource):
     @staticmethod
     @ns_api.marshal_with(club_fields, envelope="club")
@@ -166,7 +169,7 @@ class ClubsResource(Resource):
         return Club.query.all()
 
 
-@ns_api.route("/clubs/<int:club_id>/members", endpoint="members")  # noqa
+@ns_api.route("/clubs/<int:club_id>/members/", endpoint="members")
 class ClubMembersResource(Resource):
     @staticmethod
     @ns_api.marshal_list_with(member_fields, envelope="members")
@@ -187,7 +190,7 @@ class ClubMembersResource(Resource):
         return member, 201
 
 
-@ns_api.route("/clubs/<int:club_id>/members/<int:member_id>", endpoint="member")  # noqa
+@ns_api.route("/clubs/<int:club_id>/members/<int:member_id>/", endpoint="member")
 class ClubMemberResource(Resource):
     @staticmethod
     @ns_api.marshal_with(member_fields, envelope="member")
@@ -211,7 +214,7 @@ class ClubMemberResource(Resource):
         return {"message": "Success"}, 200
 
 
-@ns_api.route("/users/<int:user_id>", endpoint="user")  # noqa
+@ns_api.route("/users/<int:user_id>/", endpoint="user")
 class UserResource(Resource):
     @staticmethod
     @ns_api.marshal_with(user_fields, envelope="user")
@@ -235,7 +238,7 @@ class UserResource(Resource):
         return {"message": "Success"}, 200
 
 
-@ns_api.route("/users/<int:user_id>/clubs", endpoint="user_clubs")  # noqa
+@ns_api.route("/users/<int:user_id>/clubs/", endpoint="user_clubs")
 class ClubMembersResource(Resource):
     @staticmethod
     @ns_api.marshal_list_with(partial_club_fields, envelope="clubs")
@@ -244,6 +247,47 @@ class ClubMembersResource(Resource):
         clubs = [club.club for club in clubs]
         return clubs
 
+    @staticmethod
+    @ns_api.expect(club_join_parser)
+    @ns_api.marshal_with(partial_club_fields, envelope="club")
+    def post(user_id):
+        data = club_join_parser.parse_args(strict=True)
+        user = User.query.filter_by(id=user_id).first()
+        clubs = user.clubs
+        club_ids = [club.id for club in clubs]
+        if data['id'] not in club_ids:
+            club = Club.query.filter_by(id=data['id']).first()
+            member = ClubMember(user.id, club.id)
+            db.session.add(member)
+            db.session.commit()
+            return club
+        else:
+            return {"message": "This user is already in the club."}, 400
+
+
+@ns_api.route("/users/<int:user_id>/clubs/<int:club_id>/", endpoint="user_club")
+class UserClubResource(Resource):
+    @staticmethod
+    @ns_api.marshal_with(partial_club_fields, envelope="club")
+    def get(user_id, club_id):
+        user = User.query.filter_by(id=user_id).first()
+        clubs = user.clubs
+        club_ids = [club.id for club in clubs]
+        if club_id in club_ids:
+            club = Club.query.filter_by(id=club_id).first()
+            return club
+
+    @staticmethod
+    def delete(user_id, club_id):
+        user = User.query.filter_by(id=user_id).first()
+        clubs = user.clubs
+        club_ids = [club.id for club in clubs]
+        if club_id in club_ids:
+            member = ClubMember.query.filter_by(id=user_id, club_id=club_id).first_or_404()
+            db.session.delete(member)
+            db.session.commit()
+            return {'message': "Success"}
+
 
 @ns_api.route("/users/", endpoint="users")
 class UsersResource(Resource):
@@ -251,11 +295,11 @@ class UsersResource(Resource):
     @ns_api.expect(user_create_req_parser)
     def post():
         data = user_create_req_parser.parse_args(strict=True)
-        if not User.query.filter_by(discord_id=data['discord_id']).first():
+        if not User.query.filter_by(name=data['name']).first():
             new_user = User(data['name'], data['discord_id'], data['guild_id'])
             db.session.add(new_user)
             db.session.commit()
-            return ns_api.marshal(new_user, user_fields, envelope="user"), 201
+            return ns_api.marshal(new_user, user_fields, envelope="user")
         else:
             return {"message": "User already exists"}, 400
 
@@ -283,7 +327,7 @@ class MarketplaceItemsResource(Resource):
         return new_item
 
 
-@ns_api.route("/marketplace/items/<int:item_id>", endpoint="item")  # noqa
+@ns_api.route("/marketplace/items/<int:item_id>/", endpoint="item")
 class MarketplaceItemResource(Resource):
     @staticmethod
     @ns_api.marshal_with(item_fields)
@@ -307,7 +351,7 @@ class MarketplaceItemResource(Resource):
         return {'message': "Success!"}
 
 
-@ns_api.route("/marketplace/transactions")
+@ns_api.route("/marketplace/transactions/")
 class TransactionsResource(Resource):
     @staticmethod
     @ns_api.expect(transaction_create_parser)
@@ -319,7 +363,7 @@ class TransactionsResource(Resource):
         db.session.flush()
         new_transaction.transact()
         db.session.commit()
-        return new_transaction, 201
+        return new_transaction
 
     @staticmethod
     @ns_api.marshal_with(transaction_fields, as_list=True)
@@ -327,7 +371,7 @@ class TransactionsResource(Resource):
         return Transaction.query.all()
 
 
-@ns_api.route("/marketplace/transactions/<int:transaction_id>")
+@ns_api.route("/marketplace/transactions/<int:transaction_id>/")
 class TransactionResource(Resource):
     @staticmethod
     @ns_api.marshal_with(transaction_fields)
